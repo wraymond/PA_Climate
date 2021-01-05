@@ -1,0 +1,92 @@
+---
+title: "Precip_2012_to_2020"
+author: "Wendel Raymond"
+date: "January 5, 2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# Port Angeles precipitation from 2012 through 2020
+Data taken fron NOAA weather station.
+
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+## Libraries ##
+library(tidyverse)
+library(ggplot2)
+library(zoo)
+
+theme_set(theme_classic())
+```
+
+## Data
+Precipitation data pull from NOAA weather station GHCND:US1WACM0019. Data from Jan 1 2012 through Dec 29 2020
+
+```{r}
+dat <- read.csv("./Data/Precip_2012_2020.csv", header = TRUE, stringsAsFactors = FALSE)
+```
+
+Manage date data
+```{r}
+dat$DATE <- as.Date(dat$DATE, "%Y-%m-%d")
+```
+
+## Exploration
+
+Plots
+```{r}
+ggplot(dat) +
+  geom_point(aes(x = DATE, y = PRCP)) +
+  geom_line(aes(x = DATE, y = rollmean(PRCP, 7, na.pad = TRUE)), color = "red", size = 1.5)
+
+ggplot(dat[dat$DATE >= as.Date("2020-01-01"),]) +
+  geom_point(aes(x = DATE, y = PRCP)) +
+  geom_line(aes(x = DATE, y = rollmean(PRCP, 7, na.pad = TRUE)), color = "red", size = 1.5)
+```
+
+Means
+```{r}
+## Daily mean ##
+mean(dat$PRCP, na.rm = TRUE)
+sd(dat$PRCP, na.rm = TRUE)
+
+## Monthly Summary ##
+month.sum <- dat %>% 
+  mutate(month = format(DATE, "%m")) %>%
+  group_by(month) %>%
+  summarise(total_mean = sum(PRCP, na.rm = TRUE) / 9,
+            daily_mean = mean(PRCP, na.rm = TRUE),
+            daily_sd = sd(PRCP, na.rm = TRUE))
+
+## 7 Day rolling mean ##
+dat$roll7 <- rollmean(dat$PRCP, 7, na.pad = TRUE)
+ggplot(dat) +
+  geom_line(aes(x = DATE, y = roll7))
+
+## 7 Day rolling sum ##
+dat$sum7 <- rollsum(dat$PRCP, 7, na.pad = TRUE)
+ggplot(dat) +
+  geom_line(aes(x = DATE, y = sum7), size = 1.25)
+
+```
+
+
+Extreams
+```{r}
+# not toally what I want
+ext <- data.frame(
+  "> 0.75in", filter(dat, PRCP > 0.75) %>% 
+  summarize(n = n()),
+  "> 1in", filter(dat, PRCP > 1) %>% 
+  summarize(n = n()),
+  "> 1.25in", filter(dat, PRCP > 1.25) %>% 
+  summarize(n = n()),
+  "> 1.5in", filter(dat, PRCP > 1.5) %>% 
+  summarize(n = n()),
+  "> 1.75in", filter(dat, PRCP > 1.75) %>% 
+  summarize(n = n()),
+  "> 2in", filter(dat, PRCP > 2) %>% 
+  summarize(n = n())
+  )
+```
+
