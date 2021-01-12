@@ -20,28 +20,37 @@ theme_set(theme_classic())
 ```
 
 ## Data
-Precipitation data pull from NOAA weather station GHCND:US1WACM0019. Data from Jan 1 2012 through Dec 29 2020
+Precipitation data pull from NOAA weather station GHCND:US1WACM0019. Data from Jan 1 1950 through Dec 29 2020
 
 ```{r}
-dat <- read.csv("./Data/Precip_2012_2020.csv", header = TRUE, stringsAsFactors = FALSE)
-```
-
-Manage date data
-```{r}
+dat <- read.csv("./Data/PA_Wx_1950_2020.csv", header = TRUE, stringsAsFactors = FALSE)
 dat$DATE <- as.Date(dat$DATE, "%Y-%m-%d")
+
+dat %>% 
+  group_by(NAME) %>% 
+  summarise(start = min(DATE),
+            end = max(DATE))
 ```
+
+### Data subset
+create subset by station on finterest
+```{r}
+dat.pa <- dat %>% 
+  filter(NAME == "PORT ANGELES FAIRCHILD INTERNATIONAL AIRPORT, WA US")
+```
+
 
 ## Exploration
 
 Plots
 ```{r}
-ggplot(dat) +
+ggplot(dat.pa) +
   geom_point(aes(x = DATE, y = PRCP)) +
-  geom_line(aes(x = DATE, y = rollmean(PRCP, 7, na.pad = TRUE)), color = "red", size = 1.5)
+  #geom_line(aes(x = DATE, y = rollsum(PRCP, 7, na.pad = TRUE)), color = "red", size = 1)
 
 ggplot(dat[dat$DATE >= as.Date("2020-01-01"),]) +
   geom_point(aes(x = DATE, y = PRCP)) +
-  geom_line(aes(x = DATE, y = rollmean(PRCP, 7, na.pad = TRUE)), color = "red", size = 1.5)
+  geom_line(aes(x = DATE, y = rollsum(PRCP, 7, na.pad = TRUE)), color = "red", size = 1.5)
 ```
 
 Means
@@ -64,9 +73,9 @@ ggplot(dat) +
   geom_line(aes(x = DATE, y = roll7))
 
 ## 7 Day rolling sum ##
-dat$sum7 <- rollsum(dat$PRCP, 7, na.pad = TRUE)
-ggplot(dat) +
-  geom_line(aes(x = DATE, y = sum7), size = 1.25)
+dat.pa$sum10 <- rollsum(dat.pa$PRCP, 10, na.pad = TRUE)
+ggplot(dat.pa) +
+  geom_line(aes(x = DATE, y = sum10), size = 1.25)
 
 ```
 
